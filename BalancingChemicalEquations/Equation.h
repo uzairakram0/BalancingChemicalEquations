@@ -1,0 +1,114 @@
+#ifndef Equation_h
+#define Equation_h
+
+#include <vector>
+#include <map>
+#include "./Term.h"
+#include "./Matrix.h"
+
+//////////////////////////////////////////////////////////////////////////////
+// CLASS EQUATION //
+//////////////////////////////////////////////////////////////////////////////
+class Equation {
+public:
+  ////////////////////////////////////////////////////////////////////////////
+  // CONSTRUCTORS //
+  ////////////////////////////////////////////////////////////////////////////
+  Equation(); //default constructor
+
+  ////////////////////////////////////////////////////////////////////////////
+  //init constructor
+  //populates _lhs & _rhs by parsing inputEq
+  Equation(std::string const& inputEq);
+
+  ////////////////////////////////////////////////////////////////////////////
+  // ACCESSORS //
+  ////////////////////////////////////////////////////////////////////////////
+  std::vector<Term> const& lhs() const;
+  std::vector<Term> const& rhs() const;
+
+  ////////////////////////////////////////////////////////////////////////////
+  // MUTATORS //
+  ////////////////////////////////////////////////////////////////////////////
+  //clears _lhs and _rhs
+  void reset();
+
+  ////////////////////////////////////////////////////////////////////////////
+  //pre-condition: "this" is in the default configuration
+  //  (as if reset() was just called)
+  //parses inputEq to populate _lhs and _rhs
+  void init(std::string const& inputEq);
+
+  ////////////////////////////////////////////////////////////////////////////
+  //changes coefs of input eq
+  void balance();
+
+  ////////////////////////////////////////////////////////////////////////////
+  // PRINTING //
+  ////////////////////////////////////////////////////////////////////////////
+  std::string const toString() const;
+  friend std::ostream& operator<<(std::ostream& out,  Equation const& eq);
+
+private:
+  ////////////////////////////////////////////////////////////////////////////
+  // DATA //
+  ////////////////////////////////////////////////////////////////////////////
+  std::vector<Term> _lhs, _rhs;
+
+  ////////////////////////////////////////////////////////////////////////////
+  // METHODS //
+  ////////////////////////////////////////////////////////////////////////////
+  Term parseTerm(std::string const& inputEq, int& pos) const;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //Converts the equation into a system of linear equations
+  //  represented by a map (i.e. matrix)
+  Matrix<int> cnvrtToLinSys() const;
+
+  ////////////////////////////////////////////////////////////////////////////
+  template<typename T>
+  std::vector<long double> solveDwnBySub(
+    Matrix<long double> const& sqrSymmMtrx, std::vector<T> const& solution
+  ) const {
+    std::vector<long double> coefs(sqrSymmMtrx.size(), 0);
+    //coefs[sqrSymmMtrx.size()] = 1;
+
+    //LOOP THRU SUBSTITUTION
+    for (int index = 0; index <= (sqrSymmMtrx.size() - 1); ++index) {
+      long double sum = 0;
+      for (int sInd = 0; sInd < index; ++sInd)
+        sum += sqrSymmMtrx[index][sInd] * coefs[sInd];
+
+      coefs[index] =
+        (solution[index] - sum) / (long double)(sqrSymmMtrx[index][index]);
+    }//END LOOP THRU SUBSTITUTION
+
+    return coefs;
+  }//end solveDwnBySub
+
+  ////////////////////////////////////////////////////////////////////////////
+  template<typename T>
+  std::vector<long double> solveUpBySub(
+    Matrix<long double> const& sqrSymmMtrx, std::vector<T> const& solution
+  ) const {
+    std::vector<long double> coefs(sqrSymmMtrx.size() + 1, 0);
+    coefs[sqrSymmMtrx.size()] = 1;
+
+    //LOOP THRU SUBSTITUTION
+    for (int index = (sqrSymmMtrx.size() - 1); index >= 0; --index) {
+      long double sum = 0;
+      for (int sInd = (sqrSymmMtrx.size() - 1); sInd > index; --sInd)
+        sum += sqrSymmMtrx[index][sInd] * coefs[sInd];
+
+      coefs[index] =
+        (solution[index] - sum) / (long double)(sqrSymmMtrx[index][index]);
+    }//END LOOP THRU SUBSTITUTION
+
+    return coefs;
+  }//end solveUpBySub
+};//END CLASS EQUATION
+//////////////////////////////////////////////////////////////////////////////
+// END CLASS EQUATION //
+//////////////////////////////////////////////////////////////////////////////
+
+#endif
